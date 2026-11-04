@@ -1,19 +1,24 @@
 # main.py
 import js
 import numpy as np
+
+# 1. Configurar backend no interactivo antes de importar pyplot
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
 import io
 import base64
 
 print("[Python] Iniciando pruebas de cálculo y renderizado...")
 
-# 1. Prueba de computación con NumPy
+# 2. Computación con NumPy
 x = np.linspace(0, 4 * np.pi, 200)
 y = np.sin(x) * np.exp(-x / 5)
 promedio = float(np.mean(y))
 desviacion = float(np.std(y))
 
-# 2. Generación de gráfico en memoria con Matplotlib
+# 3. Generar gráfico en memoria
 fig, ax = plt.subplots(figsize=(6, 3), dpi=100)
 ax.plot(x, y, color="#2563eb", linewidth=2, label="Onda amortiguada")
 ax.axhline(0, color="gray", linestyle="--", linewidth=0.8)
@@ -24,20 +29,17 @@ plt.tight_layout()
 
 # Guardar figura en base64
 buf = io.BytesIO()
-plt.savefig(buf, format="png")
+fig.savefig(buf, format="png")
 buf.seek(0)
 img_b64 = base64.b64encode(buf.read()).decode("utf-8")
-plt.close(fig)
+plt.clf()  # Limpia la figura actual de forma segura sin intentar desvincular DOM
 
-# 3. Inyección visual en el DOM de la página activa
+# 4. Inyección en el DOM
 modal_id = "pyodide-test-modal"
-
-# Si ya existía un modal anterior, eliminarlo
 existente = js.document.getElementById(modal_id)
 if existente:
     existente.remove()
 
-# Crear tarjeta flotante en la esquina
 modal = js.document.createElement("div")
 modal.id = modal_id
 modal.style.position = "fixed"
@@ -66,7 +68,6 @@ modal.innerHTML = f"""
 
 js.document.body.appendChild(modal)
 
-# Botón para cerrar
 def cerrar_modal(event):
     modal.remove()
 
