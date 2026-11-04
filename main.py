@@ -1,40 +1,38 @@
 # main.py
 import js
 import numpy as np
-
-# 1. Configurar backend no interactivo antes de importar pyplot
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
 import io
 import base64
 
-print("[Python] Iniciando pruebas de cálculo y renderizado...")
+# Importar Figure directamente en lugar de usar plt.subplots()
+from matplotlib.figure import Figure
 
-# 2. Computación con NumPy
+print("[Python] Iniciando cálculo y renderizado...")
+
+# 1. Computación con NumPy
 x = np.linspace(0, 4 * np.pi, 200)
 y = np.sin(x) * np.exp(-x / 5)
 promedio = float(np.mean(y))
 desviacion = float(np.std(y))
 
-# 3. Generar gráfico en memoria
-fig, ax = plt.subplots(figsize=(6, 3), dpi=100)
+# 2. Generar gráfico completamente aislado en memoria (sin pyplot/pylab)
+fig = Figure(figsize=(6, 3), dpi=100)
+ax = fig.subplots()
 ax.plot(x, y, color="#2563eb", linewidth=2, label="Onda amortiguada")
 ax.axhline(0, color="gray", linestyle="--", linewidth=0.8)
 ax.set_title("Gráfico generado desde Python (Wasm)", fontsize=11)
 ax.grid(True, linestyle=":", alpha=0.6)
 ax.legend()
-plt.tight_layout()
+fig.tight_layout()
 
-# Guardar figura en base64
+# Guardar figura en buffer base64
 buf = io.BytesIO()
 fig.savefig(buf, format="png")
 buf.seek(0)
 img_b64 = base64.b64encode(buf.read()).decode("utf-8")
-plt.clf()  # Limpia la figura actual de forma segura sin intentar desvincular DOM
+# Ya no hace falta llamar ni a plt.close() ni a plt.clf()
 
-# 4. Inyección en el DOM
+# 3. Inyección visual en el DOM de la página activa
 modal_id = "pyodide-test-modal"
 existente = js.document.getElementById(modal_id)
 if existente:
@@ -68,6 +66,7 @@ modal.innerHTML = f"""
 
 js.document.body.appendChild(modal)
 
+# Cerrar modal al hacer clic en la X
 def cerrar_modal(event):
     modal.remove()
 
